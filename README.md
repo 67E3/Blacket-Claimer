@@ -7,7 +7,7 @@ Minimal Discord bot for Blacket daily claiming.
 1. Clone or copy this project.
 2. Run `npm install` in the project root.
 3. Create a Discord bot application and get its token.
-4. Create a `.env` file in the project root with:
+4. ENter your token into the .env file:
 
 ```env
 DISCORD_TOKEN=your-discord-bot-token
@@ -27,7 +27,7 @@ This bot stores local state in `Data/`:
 - `Data/creds.json`
 - `Data/claimer_state.json`
 
-The bot will create these files automatically if they are missing.
+The bot will create these files automatically if they are missing. **Credentials ARE hashed for security.**
 
 ## Bot Commands
 
@@ -40,8 +40,8 @@ Use these slash commands only:
 
 ## Important
 
-- Never commit `.env` or any files in `Data/` to version control.
-- Do not share your Discord bot token or Blacket password publicly.
+**- Never commit `.env` or any files in `Data/` to version control.**
+**- Do not share your Discord bot token or Blacket password publicly.**
 
 ## Help
 
