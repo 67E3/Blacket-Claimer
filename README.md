@@ -2,7 +2,7 @@
 
 Minimal Discord bot for Blacket daily claiming.
 
-> This bot stores your Blacket credentials locally and uses them to run daily claims on your behalf. It sends you DMs when claiming starts and when it finishes.
+> This bot stores your Blacket credentials locally and uses them to run daily claims on your behalf. It sends you DMs when claiming starts and when it finishes. All credentials are hashed.
 
 ## What this bot does
 
