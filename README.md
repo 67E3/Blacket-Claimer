@@ -2,59 +2,144 @@
 
 Minimal Discord bot for Blacket daily claiming.
 
-## Setup
+> This bot stores your Blacket credentials locally and uses them to run daily claims on your behalf. It sends you DMs when claiming starts and when it finishes.
 
-1. Clone or copy this project.
-2. Run `npm install` in the project root.
-3. Create a Discord bot application and get its token.
-4. ENter your token into the .env file:
+## What this bot does
+
+- Stores your Blacket username and password locally in `Data/creds.json`
+- Stores claim schedule and state in `Data/claimer_state.json`
+- Supports only 4 slash commands: `/login`, `/logout`, `/claimer`, `/claimsettings`
+- Schedules daily claims at two EST times
+- DMs the configured user when a claim starts and after it finishes with the result
+
+## Setup for complete beginners
+
+### Step 1: Install Node.js
+
+1. Go to https://nodejs.org
+2. Download the latest LTS version for Windows
+3. Install it using the installer
+4. Open PowerShell after installation
+
+### Step 2: Open this project folder in PowerShell
+
+1. Open File Explorer
+2. Go to `C:\Users\phill\Downloads\TokenClaimer`
+3. Right-click inside the folder and choose `Open in Terminal`
+
+### Step 3: Install dependencies
+
+Run this command in PowerShell:
+
+```powershell
+npm install
+```
+
+### Step 4: Create a `.env` file
+
+In the project folder, create a file named `.env` and put exactly this inside:
 
 ```env
 DISCORD_TOKEN=your-discord-bot-token
 ```
 
-5. Invite the bot to your server with the required slash command permissions.
-6. Start the bot with:
+Replace `your-discord-bot-token` with the token you get from the Discord Developer Portal.
 
-```bash
+### Step 5: Create a Discord bot and get its token
+
+1. Go to https://discord.com/developers/applications
+2. Click `New Application`
+3. Give it a name, then click `Create`
+4. Go to `Bot` on the left
+5. Click `Add Bot`
+6. Copy the `Token`
+7. Paste the token into `.env` as shown above
+
+### Step 6: Invite the bot to your server
+
+1. In the Developer Portal, go to `OAuth2` > `URL Generator`
+2. Under `Scopes`, check `bot` and `applications.commands`
+3. Under `Bot Permissions`, check `Send Messages` and `Read Messages/View Channels`
+4. Copy the generated URL
+5. Open it in your browser and invite the bot to your server
+
+### Step 7: Start the bot
+
+In PowerShell, run:
+
+```powershell
 npm start
 ```
 
-## Data Storage
+If everything is working, you should see a message like `Logged in as ...`.
 
-This bot stores local state in `Data/`:
+## How to use the bot
 
-- `Data/creds.json`
-- `Data/claimer_state.json`
+### `/login username password`
 
-The bot will create these files automatically if they are missing. **Credentials ARE hashed for security.**
+Use this command in Discord to save your Blacket credentials. Example:
 
-## Bot Commands
+```text
+/login username myblacketname password mysecretpassword
+```
 
-Use these slash commands only:
+The bot will verify the login and save your credentials locally.
 
-- `/login username password` — store Blacket credentials for this user
-- `/logout` — remove stored credentials
-- `/claimer` — toggle daily claiming on or off
-- `/claimsettings time1 time2` — view or set two daily claim times in EST
+### `/logout`
 
-## Important
+Removes your stored credentials.
 
-**- Never commit `.env` or any files in `Data/` to version control.**
-**- Do not share your Discord bot token or Blacket password publicly.**
+### `/claimer`
 
-## Help
+Toggles daily claiming ON or OFF.
 
-If you are unsure how to set up the bot, follow these steps:
+### `/claimsettings time1 time2`
 
-1. Install Node.js and `npm`.
-2. Run `npm install` in this directory.
-3. Create the `.env` file and add your `DISCORD_TOKEN`.
-4. Start the bot with `npm start`.
-5. Use the slash commands in Discord to configure login and claim settings.
+View or set two daily claim times in EST.
 
-If you want support without doing the setup yourself, join the community here:
+Example to set times:
+
+```text
+/claimsettings time1 08:30 time2 20:00
+```
+
+Example to view current times:
+
+```text
+/claimsettings
+```
+
+## DM notifications
+
+When the bot runs a claim, it will DM you:
+
+- `Starting Blacket daily claim for HH:MM EST.`
+- `Claim finished for HH:MM EST.` with the results and next scheduled time
+
+If claiming is enabled and the bot is running, you will receive status updates in DMs automatically.
+
+## Files and folders
+
+This project uses:
+
+- `scr/index.js` — main bot code
+- `.env` — contains `DISCORD_TOKEN`
+- `Data/creds.json` — stores your encrypted password and username
+- `Data/claimer_state.json` — stores the claim schedule and enabled/disabled state
+
+The bot will create `Data/` and the JSON files automatically if they do not exist.
+
+## Very important
+
+- Never commit `.env` to Git or upload it anywhere.
+- Never commit `Data/creds.json` or `Data/claimer_state.json`.
+- Do not share your Discord bot token.
+- Do not share your Blacket password.
+
+## Need help instead of setting it up yourself?
+
+If you want support or prefer someone else to help you set it up, join this Discord:
 
 https://discord.gg/qbmR58QUv3
 
-This bot setup was made by franxe.
+This setup was made by franxe.
