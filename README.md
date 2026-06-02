@@ -1,145 +1,115 @@
-# TokenClaimer Discord Bot
+# Blacket Claimer Discord Bot
 
-Minimal Discord bot for Blacket daily claiming.
+Secure multi-user Discord bot for Blacket daily claiming, built with Bun, TypeScript, NestJS, and Necord.
 
-> This bot stores your Blacket credentials locally and uses them to run daily claims on your behalf. It sends you DMs when claiming starts and when it finishes. All credentials are hashed.
+## What It Does
 
-## What this bot does
+- Registers Discord slash commands through Necord.
+- Stores one Blacket account per Discord user.
+- Keeps claim settings and claim history isolated per user.
+- Encrypts stored Blacket passwords with AES-256-GCM.
+- Uses a credential key separate from the Discord bot token.
+- Sends claim start, finish, and failure updates by DM.
 
-- Stores your Blacket username and password locally in `Data/creds.json`
-- Stores claim schedule and state in `Data/claimer_state.json`
-- Supports only 4 slash commands: `/login`, `/logout`, `/claimer`, `/claimsettings`
-- Schedules daily claims at two EST times
-- DMs the configured user when a claim starts and after it finishes with the result
+No bot that stores reversible credentials can be “completely secure,” but this version avoids the old high-risk patterns: single-user global state, Discord-token-derived encryption, misleading password hashing, and committing runtime data by accident.
 
-## Setup for complete beginners
+## Requirements
 
-### Step 1: Install Node.js
+- Bun 1.1 or newer
+- A Discord application bot token
+- A base64-encoded 32-byte credential key
+- SQLite through Prisma
 
-1. Go to https://nodejs.org
-2. Download the latest LTS version for Windows
-3. Install it using the installer
-4. Open PowerShell after installation
+Install Bun from https://bun.sh if it is not already installed.
 
-### Step 2: Open this project folder in PowerShell
+## Setup
 
-1. Open File Explorer
-2. Go to `C:\Users\phill\Downloads\TokenClaimer`
-3. Right-click inside the folder and choose `Open in Terminal`
+Install dependencies:
 
-### Step 3: Install dependencies
-
-Run this command in PowerShell:
-
-```powershell
-npm install
+```bash
+bun install
 ```
 
-### Step 4: Create a `.env` file
+Create a credential key:
 
-In the project folder, create a file named `.env` and put exactly this inside:
+```bash
+bun -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+Create `.env` in the project root:
 
 ```env
 DISCORD_TOKEN=your-discord-bot-token
+BLACKET_CREDENTIAL_KEY=your-generated-base64-key
+DATABASE_URL=file:./blacket.db
 ```
 
-Replace `your-discord-bot-token` with the token you get from the Discord Developer Portal.
+Create or update the SQLite database:
 
-### Step 5: Create a Discord bot and get its token
-
-1. Go to https://discord.com/developers/applications
-2. Click `New Application`
-3. Give it a name, then click `Create`
-4. Go to `Bot` on the left
-5. Click `Add Bot`
-6. Copy the `Token`
-7. Paste the token into `.env` as shown above
-
-### Step 6: Invite the bot to your server
-
-1. In the Developer Portal, go to `OAuth2` > `URL Generator`
-2. Under `Scopes`, check `bot` and `applications.commands`
-3. Under `Bot Permissions`, check `Send Messages` and `Read Messages/View Channels`
-4. Copy the generated URL
-5. Open it in your browser and invite the bot to your server
-
-### Step 7: Start the bot
-
-In PowerShell, run:
-
-```powershell
-npm start
+```bash
+bun run db:push
 ```
 
-If everything is working, you should see a message like `Logged in as ...`.
+Build the bot:
 
-## How to use the bot
-
-### `/login username password`
-
-Use this command in Discord to save your Blacket credentials. Example:
-
-```text
-/login username myblacketname password mysecretpassword
+```bash
+bun run build
 ```
 
-The bot will verify the login and save your credentials locally.
+Start the bot:
 
-### `/logout`
-
-Removes your stored credentials.
-
-### `/claimer`
-
-Toggles daily claiming ON or OFF.
-
-### `/claimsettings time1 time2`
-
-View or set two daily claim times in EST.
-
-Example to set times:
-
-```text
-/claimsettings time1 08:30 time2 20:00
+```bash
+bun start
 ```
 
-Example to view current times:
+For development with watch mode:
 
-```text
-/claimsettings
+```bash
+bun run dev
 ```
 
-## DM notifications
+## Discord Setup
 
-When the bot runs a claim, it will DM you:
+1. Go to https://discord.com/developers/applications.
+2. Create or select an application.
+3. Open `Bot`, create the bot, and copy its token into `.env`.
+4. Open `OAuth2` > `URL Generator`.
+5. Select the `bot` and `applications.commands` scopes.
+6. Add permissions for sending messages and viewing channels.
+7. Invite the bot to your server with the generated URL.
 
-- `Starting Blacket daily claim for HH:MM EST.`
-- `Claim finished for HH:MM EST.` with the results and next scheduled time
+## Commands
 
-If claiming is enabled and the bot is running, you will receive status updates in DMs automatically.
+- `/login username password` verifies and stores your Blacket credentials.
+- `/logout` removes your stored credentials and claim settings.
+- `/claimer` toggles your own daily claiming on or off.
+- `/claimsettings` shows your current claim times.
+- `/claimsettings time1 time2` sets your two daily claim times in `HH:MM` EST format.
 
-## Files and folders
+## Runtime Files
 
-This project uses:
+The bot writes private runtime state to a Prisma SQLite database at `prisma/blacket.db` by default. To store it somewhere else, change `DATABASE_URL`:
 
-- `scr/index.js` — main bot code
-- `.env` — contains `DISCORD_TOKEN`
-- `Data/creds.json` — stores your encrypted password and username
-- `Data/claimer_state.json` — stores the claim schedule and enabled/disabled state
+```env
+DATABASE_URL=file:/absolute/path/to/private/blacket.db
+```
 
-The bot will create `Data/` and the JSON files automatically if they do not exist.
+Keep `.env` and the SQLite database private. Both are ignored by git.
 
-## Very important
+## Project Scripts
 
-- Never commit `.env` to Git or upload it anywhere.
-- Never commit `Data/creds.json` or `Data/claimer_state.json`.
-- Do not share your Discord bot token.
-- Do not share your Blacket password.
+```bash
+bun install      # install dependencies
+bun run db:push # create or update the SQLite database schema
+bun run build   # compile TypeScript to dist/
+bun start       # run dist/main.js
+bun run dev     # run src/main.ts in watch mode
+```
 
-## Need help instead of setting it up yourself?
+## Security Notes
 
-If you want support or prefer someone else to help you set it up, join this Discord:
-
-https://discord.gg/qbmR58QUv3
-
-This setup was made by franxe.
+- Never share `DISCORD_TOKEN`.
+- Never share `BLACKET_CREDENTIAL_KEY`.
+- Losing `BLACKET_CREDENTIAL_KEY` means stored passwords cannot be decrypted.
+- Rotating `BLACKET_CREDENTIAL_KEY` requires users to run `/login` again.
+- Host the bot only on a machine or account you trust.
