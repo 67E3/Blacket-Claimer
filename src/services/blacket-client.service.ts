@@ -7,12 +7,14 @@ export interface ClaimEndpointResult {
 }
 
 const LOGIN_URL = "https://blacket.org/worker/login";
-const CLAIM_ENDPOINTS = [
-  "https://blacket.org/worker/user/daily",
-  "https://blacket.org/worker2/user/daily",
-  "https://blacket.org/worker/daily",
-  "https://blacket.org/worker2/daily"
-];
+const CLAIM_ENDPOINT = "https://blacket.org/worker/claim";
+const CLAIM_REWARDS = [1000, 1100, 1300, 1400, 1600, 1700, 1900, 2000] as const;
+
+interface ClaimResponse {
+  error?: boolean;
+  reward?: number;
+  message?: string;
+}
 
 @Injectable()
 export class BlacketClient {
@@ -36,38 +38,76 @@ export class BlacketClient {
   }
 
   public async claimDaily(cookie: string): Promise<ClaimEndpointResult[]> {
-    const results: ClaimEndpointResult[] = [];
-
-    for (const endpoint of CLAIM_ENDPOINTS) {
-      results.push(await this.claimEndpoint(endpoint, cookie));
-    }
-
-    return results;
+    return [await this.claimEndpoint(cookie)];
   }
 
-  private async claimEndpoint(endpoint: string, cookie: string): Promise<ClaimEndpointResult> {
+  private async claimEndpoint(cookie: string): Promise<ClaimEndpointResult> {
     try {
-      const response = await fetch(endpoint, {
-        method: "POST",
+      const response = await fetch(CLAIM_ENDPOINT, {
+        method: "GET",
         headers: {
+          Accept: "*/*",
           "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
           Cookie: cookie
-        }
+        },
+        referrer: "https://blacket.org/stats/"
       });
+      const body = await response.text();
 
       return {
-        endpoint,
+        endpoint: CLAIM_ENDPOINT,
         status: response.status,
-        message: sanitizeResponse(await response.text())
+        message: formatClaimResponse(body)
       };
     } catch (error) {
       return {
-        endpoint,
+        endpoint: CLAIM_ENDPOINT,
         status: "error",
         message: error instanceof Error ? error.message : String(error)
       };
     }
   }
+}
+
+function formatClaimResponse(body: string): string {
+  const parsed = parseClaimResponse(body);
+  if (!parsed) {
+    return sanitizeResponse(body);
+  }
+
+  if (typeof parsed.reward !== "number") {
+    return parsed.message ? sanitizeResponse(parsed.message) : sanitizeResponse(body);
+  }
+
+  const rewardValue = CLAIM_REWARDS[parsed.reward];
+  if (rewardValue === undefined) {
+    return `Reward index: ${parsed.reward}`;
+  }
+
+  return `Reward index: ${parsed.reward}\nReward: ${rewardValue}`;
+}
+
+function parseClaimResponse(body: string): ClaimResponse | null {
+  try {
+    const parsed: unknown = JSON.parse(body);
+
+    if (!isRecord(parsed)) {
+      return null;
+    }
+
+    return {
+      error: typeof parsed.error === "boolean" ? parsed.error : undefined,
+      reward: typeof parsed.reward === "number" ? parsed.reward : undefined,
+      message: typeof parsed.message === "string" ? parsed.message : undefined
+    };
+  } catch {
+    return null;
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 function sanitizeResponse(body: string): string {
